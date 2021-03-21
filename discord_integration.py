@@ -10,12 +10,22 @@ client = commands.Bot(command_prefix='gib ')
 
 @client.event
 async def on_ready():
-    print('Logged in as {0.user}'.format(client))
+    print(f'Logged in as {client.user}')
+
+
+# This looks terrible because making the bot use code blocks is disgusting, I will never use this again
+@client.command()
+async def ping(ctx):
+    await ctx.send(f"""
+```
+Latency: {round(client.latency*1000, 3)}ms
+```
+""")
 
 
 # This was made in like 2 hours for testing but it works ez clap
 @client.command()
-async def stonk(ctx, stock=None, start='2021-1-1', end='2021-3-11'):
+async def stonk(ctx, stock=None, start='2021-1-1', end='2021-3-12'):
     if stock is None:
         return
     else:
