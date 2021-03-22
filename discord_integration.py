@@ -25,14 +25,6 @@ Latency: {round(client.latency*1000, 3)}ms
 """)
 
 
-@client.command()
-async def test(ctx):
-    for guild in client.guilds:
-        for channel in guild.channels:
-            if str(channel) == "general":
-                await channel.send("yo this works queers")
-
-
 # This was made in like 2 hours for testing but it works ez clap
 @client.command()
 async def stonk(ctx, stock=None, start='2021-1-1', end='2021-3-12'):
