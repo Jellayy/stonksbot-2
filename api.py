@@ -4,10 +4,11 @@ from datetime import datetime
 import datetime as dt
 import pytz
 import asyncio
+import VERY_SECRET_LAUNCH_CODES
 
 
 async def get_polygon_dataframe(ticker, fromdate, todate):
-    key = "xGSFtFGNqZMzAq64YNMNEdfk7mGY4KNT"
+    key = VERY_SECRET_LAUNCH_CODES.HYDROGEN_LAUNCH_CODE()
     with RESTClient(key) as client:
         resp = client.stocks_equities_aggregates(ticker=ticker, from_=fromdate, to=todate, multiplier="5",
                                                  timespan="minute")

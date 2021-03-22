@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
 import mplfinance as mpf
-import pandas_datareader.data as web
-import datetime as dt
+import pandas as pd
+import pytz
+from datetime import datetime
+import requests
 import embeds
 import VERY_SECRET_LAUNCH_CODES
-import api as nyse
 
 client = commands.Bot(command_prefix='gib ')
 
@@ -27,20 +28,22 @@ Latency: {round(client.latency*1000, 3)}ms
 
 # This was made in like 2 hours for testing but it works ez clap
 @client.command()
-async def stonk(ctx, stock=None, start='2021-1-1', end='2021-3-12'):
+async def stonk(ctx, stock=None, timespan='day', multiplier=int(1), start='2021-01-01', end='2021-03-12'):
     if stock is None:
         await ctx.channel.send(embed=await embeds.stonk_syntax_error(client))
     else:
-        start = dt.datetime.strptime(start, '%Y-%m-%d')
-        end = dt.datetime.strptime(end, '%Y-%m-%d')
+        r = requests.get(f'https://api.polygon.io/v2/aggs/ticker/{stock.upper()}/range/{multiplier}/{timespan}/{start}/{end}?apiKey={VERY_SECRET_LAUNCH_CODES.HYDROGEN_LAUNCH_CODE()}')
 
-        df = web.DataReader(stock, 'yahoo', start, end)
-        # TODO: fix date handling between these functions
-        # df = await nyse.get_polygon_dataframe("GME", "2021-03-07", "2021-03-14")
+        # Copy pasted code to format dataframe for mplfinance
+        df = pd.DataFrame(r.json()['results'])
+        est = pytz.timezone('US/Eastern')
+        utc = pytz.utc
+        df.index = [datetime.utcfromtimestamp(ts / 1000.).replace(tzinfo=utc).astimezone(est) for ts in df['t']]
+        df.index.name = 'Date'
+        df.columns = ['Volume', 'Volume Weighted', 'Open', 'Close', 'High', 'Low', 'Time', 'Num Items']
 
         mpf.plot(df, type='candle', volume=True, style='mike', savefig='plot.png')
         file = discord.File('plot.png', filename="plot.png")
         await ctx.channel.send(file=file)
 
-
-client.run(VERY_SECRET_LAUNCH_CODES.US_LAUNCH_CODE())
+client.run(VERY_SECRET_LAUNCH_CODES.PLUTONIUM_LAUNCH_CODE())
