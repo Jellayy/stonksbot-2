@@ -35,4 +35,4 @@ async def get_polygon_dataframe(ticker, fromdate, todate):
             return False
 
 
-print(asyncio.run(get_polygon_dataframe("GME", "2021-03-07", "2021-03-14")))
+# print(asyncio.run(get_polygon_dataframe("GME", "2021-03-07", "2021-03-14")))
