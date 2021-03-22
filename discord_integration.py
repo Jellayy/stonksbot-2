@@ -28,7 +28,7 @@ Latency: {round(client.latency*1000, 3)}ms
 
 # This was made in like 2 hours for testing but it works ez clap
 @client.command()
-async def stonk(ctx, stock=None, timespan='day', multiplier=int(1), start='2021-01-01', end='2021-03-12'):
+async def stonk(ctx, stock=None, timespan='day', multiplier=int(1), start='2021-01-01', end=datetime.today().strftime("%Y-%m-%d")):
     if stock is None:
         await ctx.channel.send(embed=await embeds.stonk_syntax_error(client))
     else:
@@ -50,7 +50,7 @@ async def stonk(ctx, stock=None, timespan='day', multiplier=int(1), start='2021-
             saving_params = dict(fname='plot.png', dpi=1200)
             mpf.plot(df, type='candle', volume=True, style=s, savefig=saving_params)
             file = discord.File('plot.png', filename="plot.png")
-            await ctx.channel.send(file=file)
+            await ctx.channel.send(file=file, embed=await embeds.stonk_view(client, stock.upper()))
         except KeyError:
             await ctx.channel.send(embed=await embeds.stonk_syntax_error(client))
 
