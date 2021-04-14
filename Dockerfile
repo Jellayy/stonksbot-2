@@ -1,1 +1,12 @@
-# Yeah this is gonna natively work in docker. How? I don't fucking know.
+FROM python:3
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ./ .
+
+ENV PYTHONPATH /app
+
+CMD ["python", "./discord_integration.py"]
