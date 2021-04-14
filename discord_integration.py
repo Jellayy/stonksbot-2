@@ -27,15 +27,19 @@ Latency: {round(client.latency*1000, 3)}ms
 
 # This was made in like 2 hours for testing but it works ez clap
 @client.command()
-async def stonk(ctx, stock=None, timespan='minute', multiplier=int(5), start=((dt.datetime.today()-five_day_delta).strftime("%Y-%m-%d")), end=dt.datetime.today().strftime("%Y-%m-%d")):
+async def stonk(ctx, stock=None, timespan='minute', multiplier=int(5), start=((dt.datetime.today() - five_day_delta).strftime("%Y-%m-%d")), end=(dt.datetime.today()).strftime("%Y-%m-%d")):
     if stock is None:
         await ctx.channel.send(embed=await embeds.stonk_syntax_error(client))
     else:
         try:
+            start = dt.datetime.strptime(start, "%Y-%m-%d")
+            end = dt.datetime.strptime(end, "%Y-%m-%d")
             api.gen_graph(stock, timespan, multiplier, start, end)
             file = discord.File('plot.png', filename="plot.png")
             await ctx.channel.send(file=file, embed=await embeds.stonk_view(client, stock.upper()))
         except KeyError:
             await ctx.channel.send(embed=await embeds.stonk_syntax_error(client))
+        except ValueError:
+            await ctx.channel.send(embed=await embeds.stonk_data_error(client))
 
 client.run(VERY_SECRET_LAUNCH_CODES.PLUTONIUM_LAUNCH_CODE())

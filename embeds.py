@@ -15,6 +15,18 @@ async def stonk_syntax_error(client):
     return embed
 
 
+async def stonk_data_error(client):
+    embed = discord.Embed(
+        color=discord.Color.red(),
+        title="Data Error",
+        description="This error is maybe really bad. See if API is giving realtime data."
+    )
+    embed.set_footer(text="StonksBotDos", icon_url=client.user.avatar_url)
+    embed.add_field(name="\u200B", value="*ben might have to pay for api lol*")
+
+    return embed
+
+
 async def stonk_view(client, ticker):
     r = requests.get(f'https://api.polygon.io/v1/meta/symbols/{ticker}/company?&apiKey={VERY_SECRET_LAUNCH_CODES.HYDROGEN_LAUNCH_CODE()}')
     data = r.json()
