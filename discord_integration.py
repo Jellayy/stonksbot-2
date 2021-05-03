@@ -19,10 +19,13 @@ async def on_ready():
 @tasks.loop(minutes=1)
 async def update_status():
     if dt.time(1) <= dt.datetime.now().time() <= dt.time(17):
-        gme = yf.Ticker('GME')
-        price = round(gme.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-1]['Close'], 2)
-        await client.change_presence(activity=discord.Activity(name=f"GME: ${price}", type=3))
-        print(f"Task: Update Status: GME: ${price}")
+        try:
+            gme = yf.Ticker('GME')
+            price = round(gme.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-1]['Close'], 2)
+            await client.change_presence(activity=discord.Activity(name=f"GME: ${price}", type=3))
+            print(f"Task: Update Status: GME: ${price}")
+        except RuntimeError:
+            await client.change_presence(activity=discord.Activity(name="yfinance down", type=3))
 
 
 @tasks.loop(minutes=5)
@@ -37,13 +40,13 @@ async def gme_alert():
             for guild in client.guilds:
                 for channel in guild.channels:
                     if str(channel) == 'investing':
-                        await channel.send(f"GME **+${fiveMinDif}** | **+{percentChange}%** last 5 min \n <@226927637971337216> <@114712079683944450>")
+                        await channel.send(f"GME **+${fiveMinDif}** | **+{percentChange}%** last 5 min \n <@226927637971337216> <@114712079683944450> <@178310541691977728> <@265710358151430144>")
                         print("Task: GME Alert: 3% 5min Upward Trend Triggered")
         elif percentChange <= -3:
             for guild in client.guilds:
                 for channel in guild.channels:
                     if str(channel) == 'investing':
-                        await channel.send(f"GME **${fiveMinDif}** | **{percentChange}%** last 5 min \n <@226927637971337216> <@114712079683944450>")
+                        await channel.send(f"GME **${fiveMinDif}** | **{percentChange}%** last 5 min \n <@226927637971337216> <@114712079683944450> <@178310541691977728> <@265710358151430144>")
                         print("Task: GME Alert: 3% 5min Downward Trend Triggered")
         else:
             print("Task: GME Alert: No Trend Detected")

@@ -3,6 +3,17 @@ import requests
 import VERY_SECRET_LAUNCH_CODES
 
 
+async def outage_alert(client):
+    embed = discord.Embed(
+        color=discord.Color.red(),
+        title="Outage Notice",
+        description="I'm putting my computer in a box. Stonksbot will be down. Suck my nuts."
+    )
+    embed.set_footer(text="StonksBotDos", icon_url=client.user.avatar_url)
+
+    return embed
+
+
 async def stonk_syntax_error(client):
     embed = discord.Embed(
         color=discord.Color.red(),
