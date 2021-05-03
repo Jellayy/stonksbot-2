@@ -1,6 +1,7 @@
 # Trying out a docker image from gorialis that will hopefully fix some things
 
 FROM gorialis/discord.py
+ENV TZ="America/Phoenix"
 
 WORKDIR /app
 
