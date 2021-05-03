@@ -11,7 +11,7 @@ client = commands.Bot(command_prefix='gib ')
 
 @client.event
 async def on_ready():
-    print(f'Logged in as {client.user}')
+    print(f'[{dt.datetime.now().time()}] Logged in as {client.user}')
     gme_alert.start()
     update_status.start()
 
