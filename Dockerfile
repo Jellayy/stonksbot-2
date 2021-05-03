@@ -1,12 +1,12 @@
-FROM python:3
+# Trying out a docker image from gorialis that will hopefully fix some things
+
+FROM gorialis/discord.py
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
 
-COPY ./ .
+COPY . .
 
-ENV PYTHONPATH /app
-
-CMD ["python", "./discord_integration.py"]
+CMD ["python", "discord_integration.py"]

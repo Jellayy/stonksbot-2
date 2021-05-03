@@ -62,7 +62,7 @@ Latency: {round(client.latency*1000, 3)}ms
 """)
 
 
-# This was made in like 2 hours for testing but it works ez clap
+# This command does literally everything rn bc testing, will split up later maybe
 @client.command()
 async def stonk(ctx, stock=None, timespan='minute', multiplier=int(5), start=((dt.datetime.today() - dt.timedelta(days=5)).strftime("%Y-%m-%d")), end=(dt.datetime.today()).strftime("%Y-%m-%d")):
     if stock is None:
