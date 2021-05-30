@@ -6,9 +6,15 @@ import api
 import VERY_SECRET_LAUNCH_CODES
 import yfinance as yf
 
+
+# CONFIGURATION
+ALERT_CHANNEL = 'investing'
+
+
 client = commands.Bot(command_prefix='gib ')
 
 
+# Print log when logged in
 @client.event
 async def on_ready():
     print(f'[{dt.datetime.now().time()}] Logged in as {client.user}')
@@ -16,6 +22,7 @@ async def on_ready():
     update_status.start()
 
 
+# Updates status with current GME Price
 @tasks.loop(minutes=1)
 async def update_status():
     if dt.time(1) <= dt.datetime.now().time() <= dt.time(17):
@@ -28,25 +35,26 @@ async def update_status():
             await client.change_presence(activity=discord.Activity(name="yfinance down", type=3))
 
 
+# Detects large moving 5min trends in GME and sends alerts to server if so
 @tasks.loop(minutes=5)
 async def gme_alert():
     if dt.time(1) <= dt.datetime.now().time() <= dt.time(17):
         gme = yf.Ticker('GME')
         previous = gme.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-6]['Close']
         now = gme.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-1]['Close']
-        percentChange = round(((now - previous) / previous) * 100, 2)
-        fiveMinDif = round(now - previous, 2)
-        if percentChange >= 3:
+        percent_change = round(((now - previous) / previous) * 100, 2)
+        five_min_dif = round(now - previous, 2)
+        if percent_change >= 3:
             for guild in client.guilds:
                 for channel in guild.channels:
-                    if str(channel) == 'investing':
-                        await channel.send(f"GME **+${fiveMinDif}** | **+{percentChange}%** last 5 min \n <@226927637971337216> <@114712079683944450> <@178310541691977728> <@265710358151430144>")
+                    if str(channel) == ALERT_CHANNEL:
+                        await channel.send(f"GME **+${five_min_dif}** | **+{percent_change}%** last 5 min \n <@226927637971337216> <@114712079683944450> <@178310541691977728> <@265710358151430144>")
                         print(f"[{dt.datetime.now().time()}] Task: GME Alert: 3% 5min Upward Trend Triggered")
-        elif percentChange <= -3:
+        elif percent_change <= -3:
             for guild in client.guilds:
                 for channel in guild.channels:
-                    if str(channel) == 'investing':
-                        await channel.send(f"GME **${fiveMinDif}** | **{percentChange}%** last 5 min \n <@226927637971337216> <@114712079683944450> <@178310541691977728> <@265710358151430144>")
+                    if str(channel) == ALERT_CHANNEL:
+                        await channel.send(f"GME **${five_min_dif}** | **{percent_change}%** last 5 min \n <@226927637971337216> <@114712079683944450> <@178310541691977728> <@265710358151430144>")
                         print(f"[{dt.datetime.now().time()}] Task: GME Alert: 3% 5min Downward Trend Triggered")
         else:
             print(f"[{dt.datetime.now().time()}] Task: GME Alert: No Trend Detected")
