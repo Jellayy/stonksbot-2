@@ -14,6 +14,8 @@ PREFIX = parser.get('General', 'command prefix') + " "
 MONITORED_STOCKS = parser.get('General', 'monitored stocks').split(",")
 STOCK_CYCLE = cycle(MONITORED_STOCKS)
 STATUS_UPDATE_TIMER = parser.getint('Misc', 'status update timer (seconds)')
+ALERT_CHANNEL = parser.get('General', 'alert channel')
+ALERT_ROLE = parser.get('General', 'alert role id')
 
 
 client = commands.Bot(command_prefix=PREFIX)
@@ -24,6 +26,7 @@ client = commands.Bot(command_prefix=PREFIX)
 async def on_ready():
     print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Logged in as {client.user}')
     update_status.start()
+    moon_alert.start()
 
 
 # Update bot status with the price of a monitored stock
@@ -39,6 +42,35 @@ async def update_status():
     except RuntimeError:
         await client.change_presence(activity=discord.Activity(name="yfinance API down", type=3))
         print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task ERROR: Update Status: yfinance API down')
+
+
+# Send alerts to users if a monitored stock begins to moon (or go into the ground lmao)
+@tasks.loop(minutes=5)
+async def moon_alert():
+    if dt.time(1) <= dt.datetime.now().time() <= dt.time(17):
+        global MONITORED_STOCKS
+        global ALERT_ROLE
+        global ALERT_CHANNEL
+        for stock_name in MONITORED_STOCKS:
+            stock = yf.Ticker(stock_name)
+            previous = stock.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-6]['Close']
+            now = stock.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-1]['Close']
+            percent_change = round(((now - previous) / previous) * 100, 2)
+            five_min_dif = round(now - previous, 2)
+            if percent_change >= 3:
+                for guild in client.guilds:
+                    for channel in guild.channels:
+                        if str(channel) == ALERT_CHANNEL:
+                            await channel.send(f'{stock_name} **+${five_min_dif}** | **+{percent_change}%** last 5 min \n <@&{ALERT_ROLE}>')
+                            print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: {stock_name} {percent_change} 5min upward trend triggered')
+            elif percent_change <= -3:
+                for guild in client.guilds:
+                    for channel in guild.channels:
+                        if str(channel) == ALERT_CHANNEL:
+                            await channel.send(f'{stock_name} **${five_min_dif}** | **+{percent_change}%** last 5 min \n <@&{ALERT_ROLE}>')
+                            print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: {stock_name} {percent_change} 5min downward trend triggered')
+            else:
+                print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: No {stock_name} Trend Detected')
 
 
 # Init call to discord API (Nothing below this)
