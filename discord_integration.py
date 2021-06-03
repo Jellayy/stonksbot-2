@@ -1,11 +1,13 @@
 import discord
 from discord.ext import commands, tasks
+from discord_slash import SlashCommand, SlashContext
 import datetime as dt
 from configparser import ConfigParser
 from itertools import cycle
 import yfinance as yf
 from operator import itemgetter
 import utils.embeds as embeds
+import utils.graphs as graphs
 
 
 # Read config.ini
@@ -20,8 +22,11 @@ STATUS_UPDATE_TIMER = parser.getint('Misc', 'status update timer (seconds)')
 ALERT_CHANNEL = parser.get('General', 'alert channel')
 ALERT_ROLE = parser.get('General', 'alert role id')
 
+# Obtain API keys from api.ini
 
-client = commands.Bot(command_prefix=PREFIX)
+
+client = commands.Bot(command_prefix=PREFIX, intents=discord.Intents.all())
+slash = SlashCommand(client, sync_commands=True)
 
 
 # Run on login
@@ -30,7 +35,7 @@ async def on_ready():
     print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Logged in as {client.user}')
     update_status.start()
     moon_alert.start()
-    daily_summary.start()
+    # daily_summary.start()
 
 
 # Update bot status with the price of a monitored stock
@@ -78,6 +83,7 @@ async def moon_alert():
                     print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: No {stock_name} Trend Detected')
 
 
+# Send Brief daily summary of monitored stocks
 @tasks.loop(hours=1)
 async def daily_summary():
     if dt.datetime.now().isoweekday() in range(1, 6):
@@ -100,6 +106,20 @@ async def daily_summary():
                     if str(channel) == ALERT_CHANNEL:
                         await channel.send(embed=await embeds.daily_summary(client, today_change_sorted))
 
+
+@slash.slash(name="stonk", description="View graphs and data for a stock", options=[
+    {
+        "name": "symbol",
+        "description": "Symbol for the stock you want to view",
+        "type": "3",
+        "required": "true"
+    }
+])
+async def _stonk(ctx, symbol: str):
+    graphs.gen_graph(symbol)
+    file = discord.File('plot.png', filename='plot.png')
+    embed = discord.Embed(title='test')
+    await ctx.send(file=file, embed=embed)
 
 
 # Init call to discord API (Nothing below this)
