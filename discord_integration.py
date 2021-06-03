@@ -4,7 +4,6 @@ from discord_slash import SlashCommand, SlashContext
 import datetime as dt
 from configparser import ConfigParser
 from itertools import cycle
-import yfinance as yf
 from operator import itemgetter
 import utils.embeds as embeds
 import utils.graphs as graphs
@@ -48,8 +47,6 @@ async def update_status():
     global STOCK_CYCLE
     try:
         stock_name = next(STOCK_CYCLE)
-        # stock = yf.Ticker(stock_name)
-        # price = round(stock.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-1]['Close'], 2)
         price = polygon.agg_df(stock_name, 'day', '1', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)['Close'][0]
         await client.change_presence(activity=discord.Activity(name=f"{stock_name}: ${price}", type=3))
         print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Update Status: {stock_name}: ${price}')
@@ -67,9 +64,9 @@ async def moon_alert():
             global ALERT_ROLE
             global ALERT_CHANNEL
             for stock_name in MONITORED_STOCKS:
-                stock = yf.Ticker(stock_name)
-                previous = stock.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-6]['Close']
-                now = stock.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-1]['Close']
+                candle = polygon.agg_df(stock_name, 'minute', '5', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)
+                previous = candle['Open'][0]
+                now = candle['Close'][0]
                 percent_change = round(((now - previous) / previous) * 100, 2)
                 five_min_dif = round(now - previous, 2)
                 if percent_change >= 3:
@@ -96,8 +93,7 @@ async def daily_summary():
             global MONITORED_STOCKS
             today_change = []
             for stock_name in MONITORED_STOCKS:
-                stock = yf.Ticker(stock_name)
-                data = stock.history(interval='1d', period='1d')
+                data = polygon.agg_df(stock_name, 'day', '1', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)
                 open_price = data['Open'][0]
                 close_price = data['Close'][0]
                 delta = round(close_price - open_price, 2)
