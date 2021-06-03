@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from discord_slash import SlashCommand, SlashContext
+from discord_slash.utils.manage_commands import create_option, create_choice
 import datetime as dt
 from configparser import ConfigParser
 from itertools import cycle
@@ -108,16 +109,75 @@ async def daily_summary():
                         await channel.send(embed=await embeds.daily_summary(client, today_change_sorted))
 
 
-@slash.slash(name="stonk", description="View graphs and data for a stock", options=[
-    {
-        "name": "symbol",
-        "description": "Symbol for the stock you want to view",
-        "type": "3",
-        "required": "true"
-    }
-])
-async def _stonk(ctx, symbol: str):
-    graphs.gen_graph(symbol)
+@slash.slash(name="stonk",
+             description="Show graphs and data for a certain stock",
+             options=[
+                 create_option(
+                     name="symbol",
+                     description="Ticker symbol of the stock you want to view",
+                     option_type=3,
+                     required=True
+                 ),
+                 create_option(
+                     name="timespan",
+                     description="The size of the time window",
+                     option_type=3,
+                     required=False,
+                     choices=[
+                         create_choice(
+                             name="minute",
+                             value="minute",
+                         ),
+                         create_choice(
+                             name="hour",
+                             value="hour"
+                         ),
+                         create_choice(
+                             name="day",
+                             value="day"
+                         ),
+                         create_choice(
+                             name="week",
+                             value="week"
+                         ),
+                         create_choice(
+                             name="month",
+                             value="month"
+                         ),
+                         create_choice(
+                             name="quarter",
+                             value="quarter"
+                         ),
+                         create_choice(
+                             name="year",
+                             value="year"
+                         )
+                     ]
+                 ),
+                 create_option(
+                     name="multiplier",
+                     description="The size of the timespan multiplier",
+                     option_type=4,
+                     required=False
+                 ),
+                 create_option(
+                     name="start",
+                     description="YYYY-MM-DD",
+                     option_type=3,
+                     required=False
+                 ),
+                 create_option(
+                     name="end",
+                     description="YYYY-MM-DD",
+                     option_type=3,
+                     required=False
+                 )
+             ])
+async def _stonk(ctx, symbol: str, timespan: str = 'minute', multiplier: int = 30, start: str = ((dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y-%m-%d")), end: str = dt.datetime.now().strftime("%Y-%m-%d")):
+    symbol = symbol.upper()
+    data = polygon.agg_df(symbol, timespan, str(multiplier), start, end, POLYGON_KEY)
+    print(data)
+    graphs.gen_graph(data)
     file = discord.File('plot.png', filename='plot.png')
     embed = discord.Embed(title='test')
     await ctx.send(file=file, embed=embed)

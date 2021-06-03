@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Polygon.io gives aggregate bar results in JSON for some reason, this converts them to a pandas dataframe
 def agg_df(symbol, timespan, multiplier, start, end, key):
-    r = requests.get(f'https://api.polygon.io/v2/aggs/ticker/{symbol}/range/{multiplier}/{timespan}/{start}/{end}?unadjusted=false&sort=asc&limit=120&apiKey={key}')
+    r = requests.get(f'https://api.polygon.io/v2/aggs/ticker/{symbol}/range/{multiplier}/{timespan}/{start}/{end}?unadjusted=false&sort=asc&limit=50000&apiKey={key}')
 
     df = pd.DataFrame(r.json()['results'])
     est = pytz.timezone('US/Eastern')
