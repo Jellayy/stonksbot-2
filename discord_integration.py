@@ -8,21 +8,25 @@ import yfinance as yf
 from operator import itemgetter
 import utils.embeds as embeds
 import utils.graphs as graphs
+import utils.polygon as polygon
 
 
 # Read config.ini
 parser = ConfigParser()
 parser.read('config.ini')
-DISCORD_KEY = parser.get('APIs', 'discord.py api key')
-POLYGON_KEY = parser.get('APIs', 'polygon api key')
 PREFIX = parser.get('General', 'command prefix') + " "
 MONITORED_STOCKS = parser.get('General', 'monitored stocks').split(",")
-STOCK_CYCLE = cycle(MONITORED_STOCKS)
+STATUSBAR_STOCKS = parser.get('General', 'statusbar stocks').split(",")
+STOCK_CYCLE = cycle(STATUSBAR_STOCKS)
 STATUS_UPDATE_TIMER = parser.getint('Misc', 'status update timer (seconds)')
 ALERT_CHANNEL = parser.get('General', 'alert channel')
 ALERT_ROLE = parser.get('General', 'alert role id')
 
 # Obtain API keys from api.ini
+api_parser = ConfigParser()
+api_parser.read('api.ini')
+DISCORD_KEY = api_parser.get('APIs', 'discord.py api key')
+POLYGON_KEY = api_parser.get('APIs', 'polygon api key')
 
 
 client = commands.Bot(command_prefix=PREFIX, intents=discord.Intents.all())
@@ -35,7 +39,7 @@ async def on_ready():
     print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Logged in as {client.user}')
     update_status.start()
     moon_alert.start()
-    # daily_summary.start()
+    daily_summary.start()
 
 
 # Update bot status with the price of a monitored stock
@@ -44,8 +48,9 @@ async def update_status():
     global STOCK_CYCLE
     try:
         stock_name = next(STOCK_CYCLE)
-        stock = yf.Ticker(stock_name)
-        price = round(stock.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-1]['Close'], 2)
+        # stock = yf.Ticker(stock_name)
+        # price = round(stock.history(period='1d', interval='1m', prepost='True', actions='False').iloc[-1]['Close'], 2)
+        price = polygon.agg_df(stock_name, 'day', '1', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)['Close'][0]
         await client.change_presence(activity=discord.Activity(name=f"{stock_name}: ${price}", type=3))
         print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Update Status: {stock_name}: ${price}')
     except RuntimeError:
