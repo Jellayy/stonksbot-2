@@ -16,3 +16,9 @@ def agg_df(symbol, timespan, multiplier, start, end, key):
     df.columns = ['Volume', 'Volume Weighted', 'Open', 'Close', 'High', 'Low', 'Time', 'Num Items']
 
     return df
+
+
+def info(symbol, key):
+    r = requests.get(f'https://api.polygon.io/v1/meta/symbols/{symbol}/company?&apiKey={key}')
+
+    return r.json()

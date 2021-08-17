@@ -183,10 +183,10 @@ async def daily_summary():
 async def _stonk(ctx, symbol: str, timespan: str = 'minute', multiplier: int = 30, start: str = ((dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y-%m-%d")), end: str = dt.datetime.now().strftime("%Y-%m-%d")):
     symbol = symbol.upper()
     data = polygon.agg_df(symbol, timespan, str(multiplier), start, end, POLYGON_KEY)
+    info = polygon.info(symbol, POLYGON_KEY)
     graphs.gen_graph(data)
     file = discord.File('plot.png', filename='plot.png')
-    embed = discord.Embed(title='test')
-    await ctx.send(file=file, embed=embed)
+    await ctx.send(file=file, embed=await embeds.stonk_view(client, info))
 
 
 # Init call to discord API (Nothing below this)
