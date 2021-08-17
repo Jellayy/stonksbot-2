@@ -21,6 +21,7 @@ STOCK_CYCLE = cycle(STATUSBAR_STOCKS)
 STATUS_UPDATE_TIMER = parser.getint('Misc', 'status update timer (seconds)')
 ALERT_CHANNEL = parser.get('General', 'alert channel')
 ALERT_ROLE = parser.get('General', 'alert role id')
+DEBUG_CHANNEL = parser.get('Developer Settings', 'debug channel')
 
 # Obtain API keys from api.ini
 api_parser = ConfigParser()
@@ -65,25 +66,31 @@ async def moon_alert():
             global ALERT_ROLE
             global ALERT_CHANNEL
             for stock_name in MONITORED_STOCKS:
-                candle = polygon.agg_df(stock_name, 'minute', '5', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)
-                previous = candle['Open'][0]
-                now = candle['Close'][0]
-                percent_change = round(((now - previous) / previous) * 100, 2)
-                five_min_dif = round(now - previous, 2)
-                if percent_change >= 3:
+                try:
+                    candle = polygon.agg_df(stock_name, 'minute', '5', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)
+                    previous = candle['Open'][-1]
+                    now = candle['Close'][-1]
+                    percent_change = round(((now - previous) / previous) * 100, 2)
+                    five_min_dif = round(now - previous, 2)
+                    if percent_change >= 3:
+                        for guild in client.guilds:
+                            for channel in guild.channels:
+                                if str(channel) == ALERT_CHANNEL:
+                                    await channel.send(f'{stock_name} **+${five_min_dif}** | **+{percent_change}%** last 5 min \n <@&{ALERT_ROLE}>')
+                                    print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: {stock_name} {percent_change} 5min upward trend triggered')
+                    elif percent_change <= -3:
+                        for guild in client.guilds:
+                            for channel in guild.channels:
+                                if str(channel) == ALERT_CHANNEL:
+                                    await channel.send(f'{stock_name} **${five_min_dif}** | **+{percent_change}%** last 5 min \n <@&{ALERT_ROLE}>')
+                                    print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: {stock_name} {percent_change} 5min downward trend triggered')
+                    else:
+                        print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: No {stock_name} Trend Detected')
+                except Exception as e:
                     for guild in client.guilds:
                         for channel in guild.channels:
-                            if str(channel) == ALERT_CHANNEL:
-                                await channel.send(f'{stock_name} **+${five_min_dif}** | **+{percent_change}%** last 5 min \n <@&{ALERT_ROLE}>')
-                                print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: {stock_name} {percent_change} 5min upward trend triggered')
-                elif percent_change <= -3:
-                    for guild in client.guilds:
-                        for channel in guild.channels:
-                            if str(channel) == ALERT_CHANNEL:
-                                await channel.send(f'{stock_name} **${five_min_dif}** | **+{percent_change}%** last 5 min \n <@&{ALERT_ROLE}>')
-                                print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: {stock_name} {percent_change} 5min downward trend triggered')
-                else:
-                    print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Moon Alert: No {stock_name} Trend Detected')
+                            if str(channel) == DEBUG_CHANNEL:
+                                await channel.send(f'{stock_name} {repr(e)}')
 
 
 # Send Brief daily summary of monitored stocks
@@ -176,7 +183,6 @@ async def daily_summary():
 async def _stonk(ctx, symbol: str, timespan: str = 'minute', multiplier: int = 30, start: str = ((dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y-%m-%d")), end: str = dt.datetime.now().strftime("%Y-%m-%d")):
     symbol = symbol.upper()
     data = polygon.agg_df(symbol, timespan, str(multiplier), start, end, POLYGON_KEY)
-    print(data)
     graphs.gen_graph(data)
     file = discord.File('plot.png', filename='plot.png')
     embed = discord.Embed(title='test')

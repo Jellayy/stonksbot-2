@@ -14,5 +14,9 @@ config['Misc'] = {
     'Status Update Timer (Seconds)': '10',
 }
 
+config['Developer Settings'] = {
+    'Debug Channel': 'debug',
+}
+
 with open('../config.ini', 'w') as f:
     config.write(f)
