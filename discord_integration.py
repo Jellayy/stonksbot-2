@@ -49,7 +49,7 @@ async def update_status():
     global STOCK_CYCLE
     try:
         stock_name = next(STOCK_CYCLE)
-        price = polygon.agg_df(stock_name, 'day', '1', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)['Close'][0]
+        price = round(polygon.agg_df(stock_name, 'day', '1', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)['Close'][0], 2)
         await client.change_presence(activity=discord.Activity(name=f"{stock_name}: ${price}", type=3))
         print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Task: Update Status: {stock_name}: ${price}')
     except RuntimeError:
@@ -183,10 +183,11 @@ async def daily_summary():
 async def _stonk(ctx, symbol: str, timespan: str = 'minute', multiplier: int = 30, start: str = ((dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y-%m-%d")), end: str = dt.datetime.now().strftime("%Y-%m-%d")):
     symbol = symbol.upper()
     data = polygon.agg_df(symbol, timespan, str(multiplier), start, end, POLYGON_KEY)
+    close = round(data['Close'][-1], 2)
     info = polygon.info(symbol, POLYGON_KEY)
     graphs.gen_graph(data)
     file = discord.File('plot.png', filename='plot.png')
-    await ctx.send(file=file, embed=await embeds.stonk_view(client, info))
+    await ctx.send(file=file, embed=await embeds.stonk_price(client, info, close))
 
 
 # Init call to discord API (Nothing below this)

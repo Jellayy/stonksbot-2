@@ -17,7 +17,7 @@ async def daily_summary(client, biggest_moves):
     return embed
 
 
-async def stonk_view(client, info):
+async def stonk_info(client, info):
     embed = discord.Embed(
         color=discord.Color.blue(),
         title=info['name'],
@@ -26,6 +26,18 @@ async def stonk_view(client, info):
     embed.set_author(name=info['symbol'], icon_url=info['logo'])
     embed.add_field(name="\u200B", value=f"Location: {info['hq_state']}, {info['hq_country']}")
     embed.set_footer(text="StonksBotDos", icon_url=client.user.avatar_url)
+    embed.set_image(url="attachment://plot.png")
+
+    return embed
+
+
+async def stonk_price(client, info, close):
+    embed = discord.Embed(
+        color=discord.Color.blue(),
+        title=f"{info['name']}\n${close}",
+        description=''
+    )
+    embed.set_author(name=info['symbol'], icon_url=info['logo'])
     embed.set_image(url="attachment://plot.png")
 
     return embed
