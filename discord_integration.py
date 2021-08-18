@@ -11,7 +11,10 @@ import utils.graphs as graphs
 import utils.polygon as polygon
 
 
-# Read config.ini
+########################################################################################################################
+#                                                   Config Loading                                                     #
+########################################################################################################################
+# Base config
 parser = ConfigParser()
 parser.read('config.ini')
 PREFIX = parser.get('General', 'command prefix') + " "
@@ -23,13 +26,17 @@ ALERT_CHANNEL = parser.get('General', 'alert channel')
 ALERT_ROLE = parser.get('General', 'alert role id')
 DEBUG_CHANNEL = parser.get('Developer Settings', 'debug channel')
 
-# Obtain API keys from api.ini
+# API config
 api_parser = ConfigParser()
 api_parser.read('api.ini')
 DISCORD_KEY = api_parser.get('APIs', 'discord.py api key')
 POLYGON_KEY = api_parser.get('APIs', 'polygon api key')
 
 
+########################################################################################################################
+#                                                      Bot Init                                                        #
+########################################################################################################################
+# Init bot with slash commands
 client = commands.Bot(command_prefix=PREFIX, intents=discord.Intents.all())
 slash = SlashCommand(client, sync_commands=True)
 
@@ -43,6 +50,9 @@ async def on_ready():
     daily_summary.start()
 
 
+########################################################################################################################
+#                                                        Tasks                                                         #
+########################################################################################################################
 # Update bot status with the price of a monitored stock
 @tasks.loop(seconds=STATUS_UPDATE_TIMER)
 async def update_status():
@@ -103,7 +113,7 @@ async def daily_summary():
             for stock_name in MONITORED_STOCKS:
                 data = polygon.agg_df(stock_name, 'day', '1', dt.datetime.now().strftime("%Y-%m-%d"), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)
                 open_price = data['Open'][0]
-                close_price = data['Close'][0]
+                close_price = data['Close'][-1]
                 delta = round(close_price - open_price, 2)
                 percent_change = round(((close_price - open_price) / open_price) * 100, 2)
                 today_change.append([stock_name, delta, percent_change, abs(percent_change)])
@@ -116,7 +126,11 @@ async def daily_summary():
                         await channel.send(embed=await embeds.daily_summary(client, today_change_sorted))
 
 
-@slash.slash(name="stonk",
+########################################################################################################################
+#                                                      Commands                                                        #
+########################################################################################################################
+# Advanced stock view for pros
+@slash.slash(name="advanced_stonk",
              description="Show graphs and data for a certain stock",
              options=[
                  create_option(
@@ -180,15 +194,103 @@ async def daily_summary():
                      required=False
                  )
              ])
-async def _stonk(ctx, symbol: str, timespan: str = 'minute', multiplier: int = 30, start: str = ((dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y-%m-%d")), end: str = dt.datetime.now().strftime("%Y-%m-%d")):
+async def _advanced_stonk(ctx, symbol: str, timespan: str = 'minute', multiplier: int = 30, start: str = ((dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y-%m-%d")), end: str = dt.datetime.now().strftime("%Y-%m-%d")):
     symbol = symbol.upper()
     data = polygon.agg_df(symbol, timespan, str(multiplier), start, end, POLYGON_KEY)
     close = round(data['Close'][-1], 2)
     info = polygon.info(symbol, POLYGON_KEY)
     graphs.gen_graph(data)
     file = discord.File('plot.png', filename='plot.png')
-    await ctx.send(file=file, embed=await embeds.stonk_price(client, info, close))
+    await ctx.send(file=file, embed=await embeds.simple_stonk(client, info, close))
 
 
+# Generic stock view (easy to use)
+@slash.slash(name="stonk",
+             description="simple stonk info",
+             options=[
+                 create_option(
+                     name="symbol",
+                     description="Ticker symbol of the stock you want to view",
+                     option_type=3,
+                     required=True
+                 ),
+                 create_option(
+                     name="period",
+                     description="Time duration for price graph",
+                     option_type=3,
+                     required=False,
+                     choices=[
+                         create_choice(
+                             name="day",
+                             value="day"
+                         ),
+                         create_choice(
+                             name="week",
+                             value="week"
+                         ),
+                         create_choice(
+                             name="month",
+                             value="month"
+                         ),
+                         create_choice(
+                             name="3month",
+                             value="3month"
+                         ),
+                         create_choice(
+                             name="year",
+                             value="year"
+                         ),
+                         create_choice(
+                             name="5year",
+                             value="5year"
+                         )
+                     ]
+                 )
+             ])
+async def _stonk(ctx, symbol: str, period: str = "day"):
+    symbol = symbol.upper()
+    timespan, multiplier, start, subtitle = "", "", "", ""
+    if period == "day":
+        timespan = "minute"
+        multiplier = "10"
+        subtitle = "Today"
+        start = dt.datetime.now().strftime("%Y-%m-%d")
+    if period == "week":
+        timespan = "hour"
+        multiplier = "1"
+        subtitle = "Past Week"
+        start = (dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y-%m-%d")
+    if period == "month":
+        timespan = "hour"
+        multiplier = "12"
+        subtitle = "Past Month"
+        start = (dt.datetime.now() - dt.timedelta(days=30)).strftime("%Y-%m-%d")
+    if period == "3month":
+        timespan = "day"
+        multiplier = "1"
+        subtitle = "Past 3 Months"
+        start = (dt.datetime.now() - dt.timedelta(days=90)).strftime("%Y-%m-%d")
+    if period == "year":
+        timespan = "week"
+        multiplier = "1"
+        subtitle = "Past Year"
+        start = (dt.datetime.now() - dt.timedelta(days=365)).strftime("%Y-%m-%d")
+    if period == "5year":
+        timespan = "month"
+        multiplier = "1"
+        subtitle = "Past 5 Years"
+        start = (dt.datetime.now() - dt.timedelta(days=1825)).strftime("%Y-%m-%d")
+    data = polygon.agg_df(symbol, timespan, str(multiplier), start, dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)
+    previous = round(data['Open'][0], 2)
+    now = round(data['Close'][-1], 2)
+    info = polygon.info(symbol, POLYGON_KEY)
+    graphs.gen_graph(data)
+    file = discord.File('plot.png', filename='plot.png')
+    await ctx.send(file=file, embed=await embeds.simple_stonk(client, info, now, previous, subtitle))
+
+
+########################################################################################################################
+#                                                      Bot Init                                                        #
+########################################################################################################################
 # Init call to discord API (Nothing below this)
 client.run(DISCORD_KEY)

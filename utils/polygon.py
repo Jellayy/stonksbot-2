@@ -9,6 +9,10 @@ def agg_df(symbol, timespan, multiplier, start, end, key):
     r = requests.get(f'https://api.polygon.io/v2/aggs/ticker/{symbol}/range/{multiplier}/{timespan}/{start}/{end}?unadjusted=false&sort=asc&limit=50000&apiKey={key}')
 
     df = pd.DataFrame(r.json()['results'])
+    if 'a' in df.columns:
+        df = df.drop(columns=["a"])
+    if 'op' in df.columns:
+        df = df.drop(columns=["op"])
     est = pytz.timezone('US/Eastern')
     utc = pytz.utc
     df.index = [datetime.utcfromtimestamp(ts / 1000.).replace(tzinfo=utc).astimezone(est) for ts in df['t']]

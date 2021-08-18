@@ -31,13 +31,26 @@ async def stonk_info(client, info):
     return embed
 
 
-async def stonk_price(client, info, close):
+async def simple_stonk(client, info, now, previous, subtitle):
+    delta = now - previous
+    percent = round(abs((delta / now) * 100), 2)
+    prefix = ""
+    color = discord.Color.blue(),
+    if delta > 1:
+        color = discord.Color.green()
+        prefix = "+"
+    if delta < 1:
+        color = discord.Color.red()
+        prefix = "-"
+    delta = round(abs(delta), 2)
+
     embed = discord.Embed(
-        color=discord.Color.blue(),
-        title=f"{info['name']}\n${close}",
-        description=''
+        color=color,
+        title=f"{info['name']}\n${now}",
+        description=f'{prefix}${delta} ({percent}%) {subtitle}'
     )
     embed.set_author(name=info['symbol'], icon_url=info['logo'])
     embed.set_image(url="attachment://plot.png")
+    embed.set_footer(text="StonksBotDos", icon_url=client.user.avatar_url)
 
     return embed
