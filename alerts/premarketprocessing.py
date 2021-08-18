@@ -26,12 +26,11 @@ async def get(list):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    url="https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/{"
-                        "}?&apiKey=xGSFtFGNqZMzAq64YNMNEdfk7mGY4KNT".format(
+                    url="https://api.polygon.io/v2/aggs/ticker/{}/prev?adjusted=true&apiKey=xGSFtFGNqZMzAq64YNMNEdfk7mGY4KNT".format(
                         list[0])) as response:
                 gays = await response.json()
 
-                if gays['ticker']['day']['vw'] < 20:
+                if gays['results'][0]['vw'] < 20:
                     print(list[0])
                     yeet.append(list[0])
 
