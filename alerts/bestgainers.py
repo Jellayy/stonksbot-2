@@ -27,13 +27,17 @@ async def get(list):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    url="https://api.polygon.io/v2/aggs/ticker/{}/prev?adjusted=true&apiKey={}".format(
+                    url="https://api.polygon.io/v2/aggs/ticker/{}/range/1/day/2021-05-01/2021-08-18?adjusted=true&sort=asc&limit=50000&apiKey={}".format(
                         list[0], POLYGON_KEY)) as response:
-                gays = await response.json()
+                data = await response.json()
 
-                if gays['results'][0]['vw'] < 30:
-                    print(list[0])
-                    yeet.append(list[0])
+                df = pd.DataFrame(data['results'])
+                average = df['vw'].mean()
+                biggestchange = ((df['h'] - df['l'])/df['o']).max()
+                gays = [list[0], biggestchange]
+                yeet.append(gays)
+
+
 
     except Exception as e:
         print("Unable to get url {} due to {}.".format(list, e.__class__))
@@ -56,6 +60,7 @@ end = time.time()
 
 print("Took {} seconds to pull {} websites.".format(end - start, num_urls))
 print(len(yeet))
-yeet = sorted(yeet)
+yeet.sort(key=lambda i: i[1])
+print(yeet)
 df = pd.DataFrame(yeet)
 df.to_csv('processed.csv', index=False, header=0)
