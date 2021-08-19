@@ -1,13 +1,12 @@
 import asyncio
+import csv
+
 import aiohttp
 import time
-from urls import websites
-import utils.polygon as polygon
+
 from configparser import ConfigParser
-import datetime as dt
-import pandas as pd
-import pytz
-from datetime import datetime
+
+from pandas import read_csv
 
 parser = ConfigParser()
 parser.read('../config.ini')
@@ -16,36 +15,49 @@ api_parser = ConfigParser()
 api_parser.read('../api.ini')
 POLYGON_KEY = api_parser.get('APIs', 'polygon api key')
 
+with open('stockslist.csv', newline='') as f:
+    reader = csv.reader(f)
+    stock_list = list(reader)
 
-async def get(url):
+yeet = []
+async def get(list):
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url=url) as response:
+            async with session.get(
+                    url="https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/{}?&apiKey={}".format(
+                        list[0])) as response:
                 gays = await response.json()
                 # df = await polygon.agg_df('GME', 'minute', "30", ((dt.datetime.now() - dt.timedelta(
-                # days=7)).strftime("%Y-%m-%d")), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)
+                # days=7)).strftime("%Y-%m-%d")), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)=
 
-                df = pd.DataFrame(gays['results'])
-                est = pytz.timezone('US/Eastern')
-                utc = pytz.utc
-                df.index = [datetime.utcfromtimestamp(ts / 1000.).replace(tzinfo=utc).astimezone(est) for ts in df['t']]
-                df.index.name = 'Date'
-                df.columns = ['Volume', 'Volume Weighted', 'Open', 'Close', 'High', 'Low', 'Time', 'Num Items']
+                if gays['ticker']['day']['vw']<20:
+                    print(list[0])
+                    yeet.append(list[0])
+
+
+
+
+
+
 
     except Exception as e:
-        print("Unable to get url {} due to {}.".format(url, e.__class__))
+        print("Unable to get url {} due to {}.".format(list, e.__class__))
 
 
-async def main(urls):
-    all_responses = await asyncio.gather(*[get(url) for url in urls])
+async def main(list):
+    # print(list)
+    all_responses = await asyncio.gather(*[get(url) for url in list])
+    # print(all_responses)
     print("Finalized all. ret is a list of len {} outputs.".format(len(all_responses)))
 
 
-urls = websites.split("\n")
-num_urls = len(urls)
+# urls = websites.split("\n")
+# print(ticker_list)
+num_urls = len(stock_list)
 
 start = time.time()
-asyncio.get_event_loop().run_until_complete(main(urls))
+asyncio.get_event_loop().run_until_complete(main(stock_list))
 end = time.time()
 
 print("Took {} seconds to pull {} websites.".format(end - start, num_urls))
+print(yeet)
