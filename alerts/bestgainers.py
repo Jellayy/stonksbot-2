@@ -27,13 +27,13 @@ async def get(list):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    url="https://api.polygon.io/v2/aggs/ticker/{}/range/1/day/2021-05-01/2021-08-18?adjusted=true&sort=asc&limit=50000&apiKey={}".format(
+                    url="https://api.polygon.io/v2/aggs/ticker/{}/range/1/day/2021-09-13/2021-09-13?adjusted=true&sort=asc&limit=50000&apiKey={}".format(
                         list[0], POLYGON_KEY)) as response:
                 data = await response.json()
 
                 df = pd.DataFrame(data['results'])
                 average = df['vw'].mean()
-                biggestchange = ((df['h'] - df['l'])/df['o']).max()
+                biggestchange = ((df['h'] - df['l']) / df['o']).max()
                 gays = [list[0], biggestchange]
                 yeet.append(gays)
 

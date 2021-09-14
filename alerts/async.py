@@ -1,9 +1,7 @@
 import asyncio
 import csv
-
 import aiohttp
 import time
-
 from configparser import ConfigParser
 
 from pandas import read_csv
@@ -25,7 +23,7 @@ async def get(list):
         async with aiohttp.ClientSession() as session:
             async with session.get(
                     url="https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/{}?&apiKey={}".format(
-                        list[0])) as response:
+                        list[0], POLYGON_KEY)) as response:
                 gays = await response.json()
                 # df = await polygon.agg_df('GME', 'minute', "30", ((dt.datetime.now() - dt.timedelta(
                 # days=7)).strftime("%Y-%m-%d")), dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)=
