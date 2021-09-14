@@ -47,7 +47,7 @@ async def on_ready():
     print(f'[{dt.datetime.now().time().strftime("%H:%M:%S")}] Logged in as {client.user}')
     update_status.start()
     moon_alert.start()
-    daily_summary.start()
+    # daily_summary.start()
 
 
 ########################################################################################################################
@@ -245,9 +245,15 @@ async def _advanced_stonk(ctx, symbol: str, timespan: str = 'minute', multiplier
                              value="5year"
                          )
                      ]
+                 ),
+                 create_option(
+                     name="detailed_view",
+                     description="Display detailed stats on your symbol",
+                     option_type=5,
+                     required=False,
                  )
              ])
-async def _stonk(ctx, symbol: str, period: str = "day"):
+async def _stonk(ctx, symbol: str, period: str = "day", detailed_view: bool = False):
     symbol = symbol.upper()
     timespan, multiplier, start, subtitle = "", "", "", ""
     if period == "day":
@@ -283,10 +289,12 @@ async def _stonk(ctx, symbol: str, period: str = "day"):
     data = polygon.agg_df(symbol, timespan, str(multiplier), start, dt.datetime.now().strftime("%Y-%m-%d"), POLYGON_KEY)
     previous = round(data['Open'][0], 2)
     now = round(data['Close'][-1], 2)
-    info = polygon.info(symbol, POLYGON_KEY)
     graphs.gen_graph(data)
     file = discord.File('plot.png', filename='plot.png')
-    await ctx.send(file=file, embed=await embeds.simple_stonk(client, info, now, previous, subtitle))
+    if detailed_view:
+        await ctx.send(file=file, embed=await embeds.advanced_stonk_info(client, symbol, now, previous, subtitle))
+    else:
+        await ctx.send(file=file, embed=await embeds.simple_stonk(client, symbol, now, previous, subtitle))
 
 
 ########################################################################################################################
